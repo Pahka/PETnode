@@ -1,0 +1,5 @@
+This is the Pahka PET-node software prototype.
+
+At this writing, the code is able to answer to ARP and ping.
+
+For compilation, check out Contiki in parallel with this directory, i.e. to ../Contiki.

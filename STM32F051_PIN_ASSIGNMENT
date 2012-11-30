@@ -1,0 +1,31 @@
+Pin assignment for the STM32F0discovery based system.
+
+       STM
+Color  64# GPIO  Function  Connection         Notes
+
+Black            VCC
+Gray             GND
+
+Orange  2  PC13  WKUP2     <- ECN28J60 WOL
+
+       14  PA0   WKUP1     <- USER               Eval board user button
+
+Yellow 15  PA1   GPIO      <- ENC28J60 INT
+Yellow 16  PA2   TIM2 CH3  <- ENC28J60 CLKOUT    Temporary connection for debugging
+Purple 17  PA3   GPIO      -> ENC28J60 RESET
+
+Brown  20  PA4   SPI NSS   -> ENC28J60 CS        Temporary, check
+Blue   21  PA5   SPI SCK   -> ENC28J60 SCK
+Green  22  PA6   SPI MISO  <- ENC28J60 SO
+Red    24  PA7   SPI MOSI  -> EN28J60 SI
+
+       39  PC8   GPIO      -> Green LED
+       40  PC9   GPIO      -> Blue LED
+
+       42  PA9   USART TX  -> Debug / Bootloader
+       43  PA10  USART RX  <- Debug / Bootloader
+
+       46  PA13  SWD       <- Debug
+       49  PA14  SWC       -> Debug
+
+
