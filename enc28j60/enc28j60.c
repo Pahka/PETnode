@@ -5,7 +5,6 @@
 #include <stm32f0xx.h>
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include <enc28j60.h>
 #include <enc28j60_spi.h>
@@ -31,11 +30,11 @@ set_bank(enc_bank_t bank) {
 
     register const int bits_to_clr = (curr_index  & ~bank_index);
     if (bits_to_clr != 0)
-        SPI_XFER_TX(SPI_BFC, E_CON1, bits_to_clr);
+        SPI_XFER_TX(ENC_SPI_CLR_BF, E_CON1, bits_to_clr);
 
     register const int bits_to_set = (~curr_index &  bank_index);
     if (bits_to_set != 0)
-        SPI_XFER_TX(SPI_BFS, E_CON1, bits_to_set);
+        SPI_XFER_TX(ENC_SPI_SET_BF, E_CON1, bits_to_set);
 
     curr = bank;
 }
@@ -44,29 +43,30 @@ static inline int
 phy_get(enc_reg_t reg) {
     set_bank(MII_REG_ADR);
     /* Write address and start read */
-    SPI_XFER_TX(SPI_WCR, MII_REG_ADR, reg & ENC_REG_MASK);
-    SPI_XFER_TX(SPI_WCR, MII_CMD, MII_CMD_READ);
+    SPI_XFER_TX(ENC_SPI_WRITE_REG, MII_REG_ADR, reg & ENC_REG_MASK);
+    SPI_XFER_TX(ENC_SPI_WRITE_REG, MII_CMD, MII_CMD_READ);
     set_bank(MII_STAT);
     /* Wait until ready */
-    while (SPI_XFER_RX(SPI_RCR, MII_STAT, 1) & MII_STAT_BUSY)
+    while (SPI_XFER_RX(ENC_SPI_READ_REG, MII_STAT, 1) & MII_STAT_BUSY)
         ;
     set_bank(MII_CMD);
     /* Clear the read command; XXX is this needed? */
-    SPI_XFER_TX(SPI_WCR, MII_CMD, 0);
+    SPI_XFER_TX(ENC_SPI_WRITE_REG, MII_CMD, 0);
     /* Read the value */
-    return (SPI_XFER_RX(SPI_RCR, MII_RD_H, 1) << 8) | SPI_XFER_RX(SPI_RCR, MII_RD_L, 1);
+    return (SPI_XFER_RX(ENC_SPI_READ_REG, MII_RD_H, 1) << 8) |
+            SPI_XFER_RX(ENC_SPI_READ_REG, MII_RD_L, 1);
 }
 
 static inline void
 phy_set(enc_reg_t reg, int value, int nowait) {
     set_bank(MII_REG_ADR);
-    SPI_XFER_TX(SPI_WCR, MII_REG_ADR, reg & ENC_REG_MASK);
-    SPI_XFER_TX(SPI_WCR, MII_WR_L, value);
-    SPI_XFER_TX(SPI_WCR, MII_WR_H, value >> 8);
+    SPI_XFER_TX(ENC_SPI_WRITE_REG, MII_REG_ADR, reg & ENC_REG_MASK);
+    SPI_XFER_TX(ENC_SPI_WRITE_REG, MII_WR_L, value);
+    SPI_XFER_TX(ENC_SPI_WRITE_REG, MII_WR_H, value >> 8);
     if (nowait)
         return;
     set_bank(MII_STAT);
-    while (SPI_XFER_RX(SPI_RCR, MII_STAT, 1) & MII_STAT_BUSY)
+    while (SPI_XFER_RX(ENC_SPI_READ_REG, MII_STAT, 1) & MII_STAT_BUSY)
         ;
 }
 
@@ -87,9 +87,9 @@ enc_reg_get(enc_reg_t reg) {
         set_bank(reg & ENC_BANK_MASK);
         /* FALLTHROUGH */
     case ENC_BANK_GEN:
-        value = SPI_XFER_RX(SPI_RCR, reg, xfer_3rd_byte);
+        value = SPI_XFER_RX(ENC_SPI_READ_REG, reg, xfer_3rd_byte);
         if (reg & ENC_TYPE_LONG)
-            value |= SPI_XFER_RX(SPI_RCR, reg+1, xfer_3rd_byte) << 8;
+            value |= SPI_XFER_RX(ENC_SPI_READ_REG, reg+1, xfer_3rd_byte) << 8;
         return value;
     case ENC_BANK_PHY:
         return phy_get(reg & ENC_REG_MASK);
@@ -111,9 +111,9 @@ enc_reg_set(enc_reg_t reg, int value) {
         set_bank(reg & ENC_BANK_MASK);
         /* FALLTHROUGH */
     case ENC_BANK_GEN:
-        SPI_XFER_TX(SPI_WCR, reg, value);
+        SPI_XFER_TX(ENC_SPI_WRITE_REG, reg, value);
         if (reg & ENC_TYPE_LONG)
-            SPI_XFER_TX(SPI_WCR, reg+1, value >> 8);
+            SPI_XFER_TX(ENC_SPI_WRITE_REG, reg+1, value >> 8);
         return;
     case ENC_BANK_PHY:
         phy_set(reg & ENC_REG_MASK, value, 0);
@@ -125,7 +125,7 @@ enc_reg_set(enc_reg_t reg, int value) {
 
 void
 enc_reg_bitop(enc_spi_op_t bitop, enc_reg_t reg, int mask) {
-    assert(bitop == SPI_BFS || bitop == SPI_BFC);
+    assert(bitop == ENC_SPI_SET_BF || bitop == ENC_SPI_CLR_BF);
 
     switch (reg & ENC_TYPE_MASK) {
     case ENC_BANK0:

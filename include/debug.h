@@ -1,0 +1,14 @@
+/*
+ * Copyright 2012 Pekka Nikander.  See NOTICE for licensing information.
+ */
+
+#define DEBUG_SET_LED0(x) DEBUG_SET_LED((x), GPIO_BSRR_BS_12, GPIO_BSRR_BR_12)
+#define DEBUG_SET_LED1(x) DEBUG_SET_LED((x), GPIO_BSRR_BS_11, GPIO_BSRR_BR_11)
+#define DEBUG_SET_LED2(x) DEBUG_SET_LED((x), GPIO_BSRR_BS_10, GPIO_BSRR_BR_10)
+#define DEBUG_SET_LED3(x) DEBUG_SET_LED((x), GPIO_BSRR_BS_9,  GPIO_BSRR_BR_9)
+#define DEBUG_SET_LED4(x) DEBUG_SET_LED((x), GPIO_BSRR_BS_8,  GPIO_BSRR_BR_8)
+#define DEBUG_SET_LED5(x) DEBUG_SET_LED((x), GPIO_BSRR_BS_7,  GPIO_BSRR_BR_7)
+#define DEBUG_SET_LED6(x) DEBUG_SET_LED((x), GPIO_BSRR_BS_6,  GPIO_BSRR_BR_6)
+
+#define DEBUG_SET_LED(x, set, rst) (GPIOC->BSRR = (x)? (set): (rst))
+

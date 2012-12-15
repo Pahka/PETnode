@@ -215,5 +215,5 @@ void enc_init(const uint8_t mac_address[ETH_ADDRESS_LEN]) {
      */
     enc_buf_value_t b[2] = { 0, 0 };
 
-    enc_spi_xfer_buffer(SPI_WBM, b, sizeof(b), 0);
+    enc_spi_xfer_buffer(ENC_SPI_WRITE_MEM, b, sizeof(b), 0);
 }

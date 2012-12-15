@@ -1,2 +1,7 @@
+- fix #if 0s out from enc28j60_packet.c
 - Initialise USART for debugging
-- Enable HTTPD from Contiki
+- fix clock.c settings, most probably they are wrong
+  - seconds not implemented
+  - frequency option probably set wrong
+- Study ChibiOS/RT as an alternative to Contiki
+  - implement Contiki basic process/protothread with ChibiOS?

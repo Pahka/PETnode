@@ -127,29 +127,49 @@ const struct device_register_init_static_32bit general_purpose_io_a[] = {
 };
 
 
-/* Port C -- Eval functions */
+/* Port C -- Eval and debug functions */
 const struct device_register_init_static_32bit general_purpose_io_eval[] = {
     D32(GPIOC, MODER,
         0
+        |   GPIO_MODER_MODER6_0  /* 01: PC6  Output Led4 */
+        |   GPIO_MODER_MODER7_0  /* 01: PC7  Output Led4 */
         |   GPIO_MODER_MODER8_0  /* 01: PC8  Output Led4 */
         |   GPIO_MODER_MODER9_0  /* 01: PC9  Output Led3 */
+        |   GPIO_MODER_MODER10_0 /* 01: PC10 Output Led2 */
+        |   GPIO_MODER_MODER11_0 /* 01: PC11 Output Led1 */
+        |   GPIO_MODER_MODER12_0 /* 01: PC12 Output Led0 */
         | ! GPIO_MODER_MODER13   /* 00: PC13 Input  WOL  */
         ),
     D32(GPIOC, OTYPER,
         0
-        | ! GPIO_OTYPER_OT_8     /* PC8 GPIO output Push-pull */
-        | ! GPIO_OTYPER_OT_9     /* PC9 GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_6     /* PC6  GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_7     /* PC7  GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_8     /* PC8  GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_9     /* PC9  GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_10    /* PC10 GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_11    /* PC11 GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_12    /* PC12 GPIO output Push-pull */
         ),
     /* See page 74 of DM39193 Doc ID 022265 Rev 3 STD32F051x data sheet */
     D32(GPIOC, OSPEEDR,
         0
-        |   GPIO_OSPEEDER_OSPEEDR8 /* 11: PC8 GPIO */
-        |   GPIO_OSPEEDER_OSPEEDR9 /* 11: PC9 GPIO */
+        | ! GPIO_OSPEEDER_OSPEEDR6  /* 00: PC6 GPIO */
+        | ! GPIO_OSPEEDER_OSPEEDR7  /* 00: PC7 GPIO */
+        | ! GPIO_OSPEEDER_OSPEEDR8  /* 00: PC8 GPIO */
+        | ! GPIO_OSPEEDER_OSPEEDR9  /* 00: PC9 GPIO */
+        | ! GPIO_OSPEEDER_OSPEEDR10 /* 00: PC10 GPIO */
+        | ! GPIO_OSPEEDER_OSPEEDR11 /* 00: PC11 GPIO */
+        | ! GPIO_OSPEEDER_OSPEEDR12 /* 00: PC12 GPIO */
         ),
     D32(GPIOC, PUPDR,
         0
+        | ! GPIO_PUPDR_PUPDR6    /* PC6  -> Led6    no pull resistors */
+        | ! GPIO_PUPDR_PUPDR7    /* PC7  -> Led5    no pull resistors */
         | ! GPIO_PUPDR_PUPDR8    /* PC8  -> Led4    no pull resistors */
-        | ! GPIO_PUPDR_PUPDR9    /* PC8  -> Led3    no pull resistors */
+        | ! GPIO_PUPDR_PUPDR9    /* PC9  -> Led3    no pull resistors */
+        | ! GPIO_PUPDR_PUPDR10   /* PC9  -> Led2    no pull resistors */
+        | ! GPIO_PUPDR_PUPDR11   /* PC9  -> Led1    no pull resistors */
+        | ! GPIO_PUPDR_PUPDR12   /* PC9  -> Led0    no pull resistors */
         | ! GPIO_PUPDR_PUPDR13_0 /* PC13 <- WOL     pull up*/
         ),
 };

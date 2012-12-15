@@ -7,6 +7,8 @@
 #include "enc28j60.h"
 #include "enc28j60_spi.h"
 
+#include "debug.h"
+
 #define ENC_SPI SPI1
 
 /*
@@ -115,9 +117,12 @@ enc_spi_xfer_buffer(enc_spi_op_t cmd, enc_buf_value_t *buffer,
     register uint16_t *wp, *rp;
     wp = rp = (uint16_t *)buffer;
 
+    DEBUG_SET_LED0(0);
+    DEBUG_SET_LED2(1);
     /* Read any pertaining data from the FIFO and throw it away. */
     while ((ENC_SPI->SR & SPI_SR_FRLVL) != 0)
         dummy = ENC_SPI->DR;
+    DEBUG_SET_LED2(0);
 
     /* Enable SPI, lowering the NSS. */
     ENC_SPI->CR1 |= SPI_CR1_SPE;
@@ -128,10 +133,13 @@ enc_spi_xfer_buffer(enc_spi_op_t cmd, enc_buf_value_t *buffer,
     /* Write the first word to the FIFO. */
     ENC_SPI->DR = *wp++;
 
+    DEBUG_SET_LED1(0);
     /* Wait for the received byte corresponding to the command. */
     while ((ENC_SPI->SR & SPI_SR_FRLVL) == 0)
         ; /* XXX.  Let other threads run. */
     dummy = *DR8; /* Throw the first received byte away. */
+    DEBUG_SET_LED1(1);
+    DEBUG_SET_LED0(1);
 
     /*
      * Write any next word, and read previous word.
@@ -143,14 +151,18 @@ enc_spi_xfer_buffer(enc_spi_op_t cmd, enc_buf_value_t *buffer,
     for (len -=2; len > 0; len -= 2) {
         /* Ensure we can write to the output FIFO;
            though this is always true on the first round. */
+        DEBUG_SET_LED1(0);
         while (!(ENC_SPI->SR & SPI_SR_TXE))
             ; /* XXX.  Let other threads run. */
+        DEBUG_SET_LED1(1);
 
         ENC_SPI->DR = *wp++;
 
         /* Ensure we have at least 2 bytes in the input FIFO */
+        DEBUG_SET_LED1(0);
         while ((ENC_SPI->SR & SPI_SR_RXNE) == 0)
             ; /* XXX.  Let other threads run. */
+        DEBUG_SET_LED1(1);
 
         word = ENC_SPI->DR;
         if (read)
@@ -159,6 +171,7 @@ enc_spi_xfer_buffer(enc_spi_op_t cmd, enc_buf_value_t *buffer,
 
     /* See RM0091 page 648 */
     /* Wait until the transmission is done */
+    DEBUG_SET_LED2(1);
     while ((ENC_SPI->SR & SPI_SR_FTLVL) != 0)
         ; // XXX
 
@@ -177,6 +190,7 @@ enc_spi_xfer_buffer(enc_spi_op_t cmd, enc_buf_value_t *buffer,
     /* Read any pertaining data from the FIFO and throw it away. */
     while ((ENC_SPI->SR & SPI_SR_FRLVL) != 0)
         dummy = ENC_SPI->DR;
+    DEBUG_SET_LED2(0);
 
     /* Disable SPI, lowering NSS */
     ENC_SPI->CR1 &= ~SPI_CR1_SPE;

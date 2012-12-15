@@ -17,20 +17,100 @@
 #include "enc28j60-conf.h"
 #include "contiki-conf.h"
 
+#if CONTIKI
+#include <core/sys/pt.h>
+#include <core/sys/process.h>
+#include <core/net/tcpip.h>
+#include <core/sys/etimer.h>
+#include <apps/webserver/webserver-nogui.h>
+#include <core/sys/clock.h>
+#endif
+
 #include "init.h"
+
+#include "debug.h"
+
+void abort(void) {
+    for (;;)
+        ;
+}
 
 static __IO uint32_t TimingDelay;
 
-#define DEBUG(data) (SPI1->DR = (uint16_t)(data))
-
 void Delay(__IO uint32_t nTime)
 {
-    TimingDelay = nTime;
+#if CONTIKI
+    static clock_time_t prevTime;
+    if (prevTime == 0)
+        prevTime = clock_time();
+#endif
+    uint32_t prevDelay;
+    prevDelay = TimingDelay = nTime;
 
-    while (TimingDelay != 0)
-        /* Sleep on semaphore. Simplest possible implementation. */
-        //__WFI()
-        ;
+    while (TimingDelay > 0) {
+        if (prevDelay != TimingDelay) {
+            /*
+             * Process Ethernet packets
+             */
+#define BUF ((struct uip_eth_hdr *)&uip_buf[0])
+            DEBUG_SET_LED0(1);
+            DEBUG_SET_LED1(1);
+            uip_len = enc_packet_receive(uip_buf, sizeof(uip_buf));
+            DEBUG_SET_LED1(0);
+            if (uip_len > 0) {
+                if (BUF->type == UIP_HTONS(UIP_ETHTYPE_IP)) {
+                    uip_arp_ipin();
+                    DEBUG_SET_LED2(1);
+                    uip_input();
+                    DEBUG_SET_LED2(0);
+                    if (uip_len > 0) {
+                        uip_arp_out();
+                    }
+                } else if (BUF->type == UIP_HTONS(UIP_ETHTYPE_ARP)) {
+                    uip_arp_arpin();
+                }
+                if (uip_len > 0) {
+                    DEBUG_SET_LED4(1);
+                    enc_packet_send(uip_buf, uip_len);
+                    DEBUG_SET_LED4(0);
+                }
+            }
+            DEBUG_SET_LED0(0);
+
+#ifdef CONTIKI
+            /*
+             * Process upper-layer processes
+             */
+            DEBUG_SET_LED2(1);  // Yellow
+            while (process_run() > 0)
+                ;
+            DEBUG_SET_LED2(0);
+            if (clock_time() > prevTime + 50) {
+#endif
+                /*
+                 * Process TCP connections every 50ms
+                 */
+                DEBUG_SET_LED1(1);  // Green
+                for (int i = 0; i < UIP_CONNS; ++i) {
+                    GPIOC->ODR ^= GPIO_ODR_8;
+                    uip_periodic(i);
+                    GPIOC->ODR ^= GPIO_ODR_8;
+                    if (uip_len > 0) {
+                        uip_arp_out();
+                        enc_packet_send(uip_buf, uip_len);
+                    }
+                }
+                DEBUG_SET_LED1(0);  // Green
+#if CONTIKI
+                prevTime = clock_time();
+            }
+#endif
+            prevDelay = TimingDelay;
+        }
+        /* XXX Sleep on semaphore. Simplest possible implementation. */
+        // __WFI();
+    }
+    TimingDelay = 0;
 }
 
 void TimingDelay_Decrement(void)
@@ -42,11 +122,13 @@ void TimingDelay_Decrement(void)
     }
 }
 
+#ifndef CONTIKI
 void SysTick_Handler(void)
 {
     TimingDelay_Decrement();
     // Could be more here
 }
+#endif
 
 /*
  * The following derived from STM Copyrighted work.
@@ -89,62 +171,40 @@ main(void) {
 
     Peripheral_Init();
 
+    GPIOC->ODR ^= GPIO_ODR_9;
+
     /* Enable ENC28J60 */
     GPIOA->BSRR = GPIO_BSRR_BS_3; /* Take out from reset */
     enc_init(uip_ethaddr.addr);
-
-    GPIOC->ODR ^= GPIO_ODR_9;
 
     uip_init();
     uip_ipaddr_t addr;
     uip_ipaddr(&addr, 10,0,0,2);
     uip_sethostaddr(&addr);
 
-    {
-        GPIOA->BSRR = GPIO_BSRR_BS_8;
-        Delay(10);
-        GPIOA->BSRR = GPIO_BSRR_BR_8;
-    }
-
-    /* XXX Replace with macro/inline */
-    GPIOA->BSRR = GPIO_BSRR_BS_3; /* Enable ENC28J60 */
+#if CONTIKI
+    process_init();
+    process_start(&etimer_process, NULL);
+    process_start(&tcpip_process, NULL);
+    process_start(&webserver_nogui_process, NULL);
+#endif
 
     BlinkSpeed = 1;
 
     for (;;) {
-        /*
-         * Process Ethernet packets
-         */
- #define BUF ((struct uip_eth_hdr *)&uip_buf[0])
-        uip_len = enc_packet_receive(uip_buf, sizeof(uip_buf));
-        if (uip_len > 0) {
-            if (BUF->type == UIP_HTONS(UIP_ETHTYPE_IP)) {
-                uip_arp_ipin();
-                uip_input();
-                if (uip_len > 0) {
-                    uip_arp_out();
-                }
-            } else if (BUF->type == UIP_HTONS(UIP_ETHTYPE_ARP)) {
-                uip_arp_arpin();
-            }
-            if (uip_len > 0) {
-                enc_packet_send(uip_buf, uip_len);
-            }
-        }
-
         /* Check if the user button is pressed */
         if (GPIOA->IDR & GPIO_IDR_0) {
 
-            /* BlinkSpeed: 0 -> 1 -> 2 -> 3 -> 0, then re-cycle */
-            BlinkSpeed = (BlinkSpeed + 1) % 4;
+            /* BlinkSpeed: 1 -> 2 -> 3 -> 4 -> 1 then re-cycle */
+            BlinkSpeed = BlinkSpeed % 4 + 1;
 
-            GPIOC->BSRR = GPIO_BSRR_BS_8;
+            DEBUG_SET_LED4(1);
             Delay(1000);
-            GPIOC->BSRR = GPIO_BSRR_BR_8;
+            DEBUG_SET_LED4(0);
         }
         GPIOC->ODR ^= GPIO_ODR_9;
 
-        Delay(BlinkSpeed * 10);
+        Delay(BlinkSpeed * 50);
     }
     /* NOTREACHED */
 }

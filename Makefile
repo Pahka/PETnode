@@ -13,10 +13,20 @@ SRCS += enc28j60/enc28j60_packet.c
 SRCS += enc28j60/enc28j60_stm32f0_spi.c
 
 # HTTPD
-ifeq (true,false)
+ifeq (true,true)
 C = ../Contiki
-SRCS += $C/core/sys/process.c $C/core/net/tcpip.c $C/core/net/psock.c
-CFLAGS += -I$C -DCONTIKI=1
+SRCS += $C/core/sys/process.c $C/core/sys/etimer.c $C/core/sys/timer.c
+SRCS += $C/core/net/tcpip.c $C/core/net/psock.c $C/core/lib/memb.c
+SRCS += $C/apps/webserver/httpd.c $C/apps/webserver/http-strings.c
+SRCS += $C/apps/webserver/httpd-cgi.c
+SRCS += $C/apps/webserver/httpd-fs.c
+SRCS += $C/apps/webserver/webserver-nogui.c
+SRCS += $C/cpu/arm/common/dbg-io/dbg-snprintf.c
+SRCS += $C/cpu/arm/common/dbg-io/strformat.c
+SRCS += clock.c
+CFLAGS += -I$C -DCONTIKI=1 -I$C/cpu/arm/common/dbg-io
+CFLAGS += -Wno-strict-aliasing -Wno-missing-field-initializers
+CFLAGS += -Wno-sign-compare
 endif
 
 # uIP
@@ -44,10 +54,11 @@ OBJCOPY=arm-none-eabi-objcopy
 OBJDUMP=arm-none-eabi-objdump
 SIZE=arm-none-eabi-size
 
-CFLAGS += -g -std=c99 -Os -Wall -Werror -Wextra -Wno-strict-aliasing
+CFLAGS += -g -std=c99 -Os -Wall -Werror -Wextra
 CFLAGS += -mlittle-endian -mcpu=cortex-m0  -march=armv6-m -mthumb
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -Wl,--gc-sections -Wl,-Map=$(PROJ_NAME).map
+CFLAGS += -nodefaultlibs
 
 CFLAGS += -I. -I$(PLATFORM) -Ienc28j60 -Iinclude
 
@@ -75,3 +86,13 @@ clean:
 	rm -f $(PROJ_NAME).map
 	rm -f $(PROJ_NAME).lst
 
+install: all
+	st-flash erase
+	st-flash write $(PROJ_NAME).bin 0x08000000
+
+test:	install
+	echo "Reset the device and press enter."
+	read foo
+	-sudo arp -d 10.0.0.2
+	ping -c 10 10.0.0.2
+	wget http://10.0.0.2

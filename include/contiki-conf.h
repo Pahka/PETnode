@@ -27,7 +27,7 @@ typedef unsigned int uip_stats_t;
 #define UIP_CONF_LLH_LEN         14 /* Ethernet header */
 #define UIP_CONF_BROADCAST       1
 #define UIP_CONF_LOGGING         0
-#define UIP_CONF_BUFFER_SIZE     1536
+#define UIP_CONF_BUFFER_SIZE     512
 
 #define UIP_CONF_TCP_FORWARD     0
 

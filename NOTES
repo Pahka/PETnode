@@ -1,0 +1,23 @@
+BUG1 enc*_packet, packet still being sent
+
+Without #if 0s in enc*_packet.c: external RED and GREEN, not YELLOW: LED1, LED0, not LED2
+
+BUG2: crash at unknown location
+      LED2 (Yellow)  process_run
+      LED1 (Red)     uip_periodic etc (for loop)
+      LED0 (Green)   packet receive, uip_input
+         +LED1 (Red):     enc_packet_receive
+            +LED2 (Yellow):   enc_spi_xfer_buffer 1
+            +LED4 (Blue):     enc_spi_xfer_buffer 2
+               -LED0 (Green):    Before anything: not here
+                  +LED2 (Yellow):   Read any pertaining data
+                  -LED1 (Red):      Wait for the received byte
+               -LED1 (Red):      Wait for transmission queue has space
+               -LED1 (Red):      Wait for two bytes to the input FIFO
+               +LED2 (Yellow):   Wait for transmission done
+         +LED2 (Yellow):  uip_input
+         +LED4 (Blue):    enc_packet_send
+
+      Crashes at Green: packet receive, uip_input,
+                  +Red: enc_packet_receive
+                 +Blue: enc_spi_xfer_buffer #2

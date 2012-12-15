@@ -257,17 +257,17 @@ typedef enum enc_regs {
 } enc_reg_t;
 
 typedef enum enc_spi_op {
-    SPI_RCR = 0x00,
-    SPI_RBM = 0x3A,
-    SPI_WCR = 0x40,
-    SPI_WBM = 0x7A,
-    SPI_BFS = 0x80,
-    SPI_BFC = 0xA0,
-    SPI_SC  = 0xFF,
+    ENC_SPI_READ_REG  = 0x00,
+    ENC_SPI_READ_MEM  = 0x3A,
+    ENC_SPI_WRITE_REG = 0x40,
+    ENC_SPI_WRITE_MEM = 0x7A,
+    ENC_SPI_SET_BF    = 0x80,
+    ENC_SPI_CLR_BF    = 0xA0,
+    ENC_SPI_RESET     = 0xFF,
 } enc_spi_op_t;
 
 typedef uint8_t enc_reg_value_t, enc_buf_value_t;
-typedef uint16_t enc_buf_len_t;
+typedef  int16_t enc_buf_len_t; /* XXX.  Must not be unsigned */
 typedef uint16_t enc_phy_value_t;
 
 typedef enum enc_rx_packet_status {
