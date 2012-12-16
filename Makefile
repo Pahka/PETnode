@@ -25,7 +25,7 @@ SRCS += $C/cpu/arm/common/dbg-io/dbg-snprintf.c
 SRCS += $C/cpu/arm/common/dbg-io/strformat.c
 SRCS += clock.c
 CFLAGS += -I$C -DCONTIKI=1 -I$C/cpu/arm/common/dbg-io
-CFLAGS += -Wno-strict-aliasing -Wno-missing-field-initializers
+CFLAGS += -Wno-missing-field-initializers
 CFLAGS += -Wno-sign-compare
 endif
 
