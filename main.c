@@ -187,6 +187,8 @@ main(void) {
     process_start(&etimer_process, NULL);
     process_start(&tcpip_process, NULL);
     process_start(&webserver_nogui_process, NULL);
+    extern void pahka_cgi_init();
+    pahka_cgi_init();
 #endif
 
     BlinkSpeed = 1;

@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <script type="text/javascript">
+      xmlhttp = new XMLHttpRequest();
+
+      function updateSlider(slider) {
+        while (slider.value != slider.real_value) {
+          if (slider.value < slider.real_value) {
+            xmlhttp.open("GET","/pahka_" + slider.id + "_dec.shtml",false);
+          } else {
+            xmlhttp.open("GET","/pahka_" + slider.id + "_inc.shtml",false);
+          }
+          xmlhttp.send();
+          document.getElementById(slider.id + "_value").innerHTML = xmlhttp.responseText;
+          slider.real_value = parseInt(xmlhttp.responseText);
+        }
+      }
+    </script>
+    <title>Pahka demo 0.02!</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">  
+    <style type="text/css">
+    </style>
+  </head>
+  <body bgcolor="#ffffec" text="black">
+    <h1>Pahka demo</h1>
+    <div id="slider">
+      0
+      <input id="red" 
+             type="range" 
+             min="0" 
+             max="100" 
+             step="1" 
+             real_value="100" 
+             value="100"
+             onchange="updateSlider(this)" />
+      100  1/frequency (100 = 10 kHz, 10 = 100 kHz): 
+      <span id="red_value">100</span>
+    </div>
+    <br/>
+    <div id="slider">
+      0
+      <input id="gre" 
+             type="range" 
+             min="0" 
+             max="100" 
+             step="1"
+             real_value="1" 
+             value="100"
+             onchange="updateSlider(this)" />
+      100  Off-duty cycles: 
+      <span id="gre_value">100</span>
+    </div>
+    <br/>
+  </body>
+</html>

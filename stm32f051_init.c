@@ -25,11 +25,11 @@ const struct device_register_init_masked_32bit reset_and_clock_control[] = {
         RCC_APB1ENR_TIM2EN,
         RCC_APB1ENR_TIM2EN),
     M32(RCC, APB2ENR,
-        RCC_APB2ENR_SYSCFGEN | RCC_APB2ENR_SPI1EN,
-        RCC_APB2ENR_SYSCFGEN | RCC_APB2ENR_SPI1EN),
+        RCC_APB2ENR_TIM1EN   | RCC_APB2ENR_SYSCFGEN | RCC_APB2ENR_SPI1EN,
+        RCC_APB2ENR_TIM1EN   | RCC_APB2ENR_SYSCFGEN | RCC_APB2ENR_SPI1EN),
     M32(RCC, AHBENR,
-        RCC_AHBENR_GPIOAEN   | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOFEN,
-        RCC_AHBENR_GPIOAEN   | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOFEN),
+        RCC_AHBENR_GPIOAEN   | RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOFEN,
+        RCC_AHBENR_GPIOAEN   | RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOFEN),
 };
 
 /*
@@ -117,15 +117,58 @@ const struct device_register_init_static_32bit general_purpose_io_a[] = {
         ),
     D32(GPIOA, AFR[1],
         0
-#define GPIO_AFRL_AFRL1_0            ((uint32_t)0x00000010)
-#define GPIO_AFRL_AFRL2_0            ((uint32_t)0x00000100)
-        |   GPIO_AFRL_AFRL1_0    /* PA9  AF1 TX */
-        |   GPIO_AFRL_AFRL2_0    /* PA10 AF1 RX */
+#define GPIO_AFRL_AFRL1_AF1            ((uint32_t)0x00000010)
+#define GPIO_AFRL_AFRL2_AF1            ((uint32_t)0x00000100)
+        |   GPIO_AFRL_AFRL1_AF1  /* PA9  AF1 TX */
+        |   GPIO_AFRL_AFRL2_AF1  /* PA10 AF1 RX */
         | ! GPIO_AFRL_AFRL5      /* PA13 AF0 SWD, reset-time value */
         | ! GPIO_AFRL_AFRL6      /* PA14 AF0 SWC, reset-time value */
         ),
 };
 
+/* Port B */
+const struct device_register_init_static_32bit general_purpose_io_b[] = {
+    D32(GPIOB, MODER,
+        0
+        |   GPIO_MODER_MODER11_1  /* 01: PB11  AF */
+        |   GPIO_MODER_MODER13_1  /* 01: PB13  AF */
+        |   GPIO_MODER_MODER14_1  /* 01: PB14  AF */
+        |   GPIO_MODER_MODER15_1  /* 01: PB15  AF */
+        ),
+    D32(GPIOB, OTYPER,
+        0
+        | ! GPIO_OTYPER_OT_11     /* PB11 GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_13     /* PB13 GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_14     /* PB14 GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_15     /* PB15 GPIO output Push-pull */
+        ),
+    /* See page 74 of DM39193 Doc ID 022265 Rev 3 STD32F051x data sheet */
+    D32(GPIOB, OSPEEDR,
+        0
+        | ! GPIO_OSPEEDER_OSPEEDR11
+        | ! GPIO_OSPEEDER_OSPEEDR13
+        | ! GPIO_OSPEEDER_OSPEEDR14
+        | ! GPIO_OSPEEDER_OSPEEDR15
+        ),
+    D32(GPIOB, PUPDR,
+        0
+        | ! GPIO_PUPDR_PUPDR11  /* PB11 no pull resistors */
+        | ! GPIO_PUPDR_PUPDR13  /* PB13 no pull resistors */
+        | ! GPIO_PUPDR_PUPDR14  /* PB14 no pull resistors */
+        | ! GPIO_PUPDR_PUPDR15  /* PB15 no pull resistors */
+        ),
+    D32(GPIOB, AFR[1],
+        0
+#define GPIO_AFRL_AFRL3_AF2            ((uint32_t)0x00002000)
+#define GPIO_AFRL_AFRL5_AF2            ((uint32_t)0x00200000)
+#define GPIO_AFRL_AFRL6_AF2            ((uint32_t)0x02000000)
+#define GPIO_AFRL_AFRL7_AF2            ((uint32_t)0x20000000)
+        |   GPIO_AFRL_AFRL3_AF2 /* PB11 AF2 TIM2_CH4  */
+        |   GPIO_AFRL_AFRL5_AF2 /* PB13 AF2 TIM1_CH1N */
+        |   GPIO_AFRL_AFRL6_AF2 /* PB14 AF2 TIM1_CH2N */
+        |   GPIO_AFRL_AFRL7_AF2 /* PB15 AF2 TIM1_CH3N */
+        ),
+};
 
 /* Port C -- Eval and debug functions */
 const struct device_register_init_static_32bit general_purpose_io_eval[] = {
@@ -175,46 +218,53 @@ const struct device_register_init_static_32bit general_purpose_io_eval[] = {
 };
 
 /*
- * Timer-counter for uIP and other timeouts.
+ * Timer-counter for LED buck converter.
  */
-const struct device_register_init_static_16bit charger[] = {
-#if 0
-    XXX
+const struct device_register_init_static_16bit rgb_buck_pwm[] = {
     D16(TIM2, CR1, 0),        /* Disable the counter */
-    D16(TIM2, CR2, 0),
+    D16(TIM2, CR2,
+        0
+        | ! TIM_CR2_TI1S      /* 0 = CH1 is connected to TI1 */
+        | ! TIM_CR2_MMS       /* 000 = "Reset." TRGO from UG */
+        | ! TIM_CR2_CCDS      /* 0 = DMA when CCX event */
+        ),
     D16(TIM2, SMCR, 0),
     D16(TIM2, DIER, 0),
-    D16(TIM2, CCMR1,
+    D16(TIM2, CCMR1, 0),
+    D16(TIM2, CCMR2,
         0
-        |   TIM_CCMR1_CC2S_0  /* Input TI2 = CH2 */
-        | ! TIM_CCMR1_IC2PSC  /* No prescaler */
-        | ! TIM_CCMR1_IC2F    /* No input filter */
+        | ! TIM_CCMR2_OC4CE     /* 0   = OC41Ref not affecved by ETRF */
+        |   TIM_CCMR2_OC4M_PWM1 /* 110 = CH4 PWM Mode 1 */
+        |   TIM_CCMR2_OC4PE     /* 1   = CH4 preload register in use */
+        |   TIM_CCMR2_OC4FE     /* 1   = CH4 compare fast mode enabled */
+        | ! TIM_CCMR2_CC4S      /* 00  = CH4 is output */
         ),
-    D16(TIM2, CCMR2, 0),
     D16(TIM2, CCER,
         0
-        |   TIM_CCER_CC2E     /* Enable capture */
-        |   TIM_CCER_CC2P_Falling
+        | ! TIM_CCER_CC4NP      /* 0   = Must be kept cleared for output */
+        |   TIM_CCER_CC4P       /* 1   = CH4 active low */
+        |   TIM_CCER_CC4E       /* 1   = CH4 is actively output */
         ),
 
     /*
      * Note that TIM2 ARR and CCR registers are 32-bits long, but here we
      * initialize them with only 16-bits long values
      */
-    D16(TIM2, ARR, 20000),    /* XXX */
-    D16(TIM2, CCR4, 5000),    /* 25% */
-    D16(TIM2, PSC, 0),        /* No prescaler */
+    D16(TIM2, CCR4,  100),    /* Boot with 0% duty */
+    D16(TIM2, ARR,   100),    /* 1 MHz / 100 = 10 kHz */
+    D16(TIM2, PSC,    47),    /* 48MHz / 48  = 1 MHz */
 
     D16(TIM2, CR1,
         0
-        | ! TIM_CR1_CKD       /* Clock divide by 1, i.e. zero value here */
-        |   TIM_CR1_ARPE      /* Auto-reload preload enabled, ARR buffered */
-        | ! TIM_CR1_CMS       /* Edge aligned mode */
-        |   TIM_CR1_DIR       /* Down counter */
-        | ! TIM_CR1_OPM       /* Continuous */
+        | ! TIM_CR1_CKD       /* 00 = Clock divide by 1 */
+        |   TIM_CR1_ARPE      /* 1  = Auto-reload preload enabled, ARR buffered */
+        | ! TIM_CR1_CMS       /* 00 = Edge aligned mode */
+        |   TIM_CR1_DIR       /* 1  = Down counter */
+        | ! TIM_CR1_OPM       /* 0  = Continuous */
+        | ! TIM_CR1_URS       /* 0  = All UEV sources */
+        | ! TIM_CR1_UDIS      /* 0  = Enable UEV */
         |   TIM_CR1_CEN       /* Enable the counter */
         ),
-#endif
 };
 
 /* SPI */
@@ -261,10 +311,11 @@ const struct device_register_init_static_16bit spi[] = {
 const device_register_init_descriptor_t dri_tables[] = {
     DRI_DESCRIPTOR_MASKED_32BIT(RCC, reset_and_clock_control),
     DRI_DESCRIPTOR_MASKED_32BIT(NVIC, nvic),
-    DRI_DESCRIPTOR_STATIC_32BIT(GPIOA, general_purpose_io_a),
-    DRI_DESCRIPTOR_STATIC_32BIT(GPIOC, general_purpose_io_eval),
     DRI_DESCRIPTOR_STATIC_16BIT(SPI1, spi),
-    DRI_DESCRIPTOR_STATIC_16BIT(TIM2, charger),
+    DRI_DESCRIPTOR_STATIC_16BIT(TIM2, rgb_buck_pwm),
+    DRI_DESCRIPTOR_STATIC_32BIT(GPIOA, general_purpose_io_a),
+    DRI_DESCRIPTOR_STATIC_32BIT(GPIOB, general_purpose_io_b),
+    DRI_DESCRIPTOR_STATIC_32BIT(GPIOC, general_purpose_io_eval),
 };
 
 /*

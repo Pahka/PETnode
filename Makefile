@@ -19,14 +19,17 @@ SRCS += $C/core/sys/process.c $C/core/sys/etimer.c $C/core/sys/timer.c
 SRCS += $C/core/net/tcpip.c $C/core/net/psock.c $C/core/lib/memb.c
 SRCS += $C/apps/webserver/httpd.c $C/apps/webserver/http-strings.c
 SRCS += $C/apps/webserver/httpd-cgi.c
-SRCS += $C/apps/webserver/httpd-fs.c
+SRCS += httpd-fs.c
 SRCS += $C/apps/webserver/webserver-nogui.c
 SRCS += $C/cpu/arm/common/dbg-io/dbg-snprintf.c
 SRCS += $C/cpu/arm/common/dbg-io/strformat.c
 SRCS += clock.c
-CFLAGS += -I$C -DCONTIKI=1 -I$C/cpu/arm/common/dbg-io
+SRCS += cgi.c
+CFLAGS += -I. -I$C -DCONTIKI=1 -I$C/cpu/arm/common/dbg-io
+CFLAGS += -I$C/apps/webserver
 CFLAGS += -Wno-missing-field-initializers
 CFLAGS += -Wno-sign-compare
+
 endif
 
 # uIP
@@ -70,12 +73,16 @@ ROOT=$(shell pwd)
 
 all: 	$(PROJ_NAME).elf
 
-$(PROJ_NAME).elf: $(SRCS)
-	$(CC) $(CFLAGS) $^ -o $@ -L$(LDSCRIPT_INC) -T$(PLATFORM).ld
+$(PROJ_NAME).elf: $(SRCS) pahka-fsdata.c
+	$(CC) $(CFLAGS) $(SRCS) -o $@ -L$(LDSCRIPT_INC) -T$(PLATFORM).ld
 	$(OBJCOPY) -O ihex $(PROJ_NAME).elf $(PROJ_NAME).hex
 	$(OBJCOPY) -O binary $(PROJ_NAME).elf $(PROJ_NAME).bin
 	$(OBJDUMP) -St $(PROJ_NAME).elf >$(PROJ_NAME).lst
 	$(SIZE) $(PROJ_NAME).elf
+
+./pahka-fsdata.c: $(wildcard ./pahka-fs/*.*)
+	$C/tools/makefsdata -d ./pahka-fs -o ./pahka-fsdata.c
+	touch ./httpd-fs.c
 
 clean:
 	find ./ -name '*~' | xargs rm -f
@@ -85,6 +92,7 @@ clean:
 	rm -f $(PROJ_NAME).bin
 	rm -f $(PROJ_NAME).map
 	rm -f $(PROJ_NAME).lst
+	rm -f ./httpd-fsdata.c
 
 install: all
 	st-flash erase
@@ -94,5 +102,5 @@ test:	install
 	echo "Reset the device and press enter."
 	read foo
 	-sudo arp -d 10.0.0.2
-	ping -c 10 10.0.0.2
+	ping -c 2 10.0.0.2
 	wget http://10.0.0.2

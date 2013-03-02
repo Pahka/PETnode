@@ -22,18 +22,24 @@ Red    21  PA5   SPI SCK   -> ENC28J60 SCK
 Brown  22  PA6   SPI MISO  <- ENC28J60 SO
 Black  24  PA7   SPI MOSI  -> ENC  28J60 SI
 
+       30  PB11  TIM2_CH4  -> "Production" Buck Converter
+
        37  PC6   GPIO      -> Debug Red    LED6    TBD
        38  PC7   GPIO      -> Debug Yellow LED5    TBD
 
        39  PC8   GPIO      -> Eval Green LED       Eval board: Blinken light in main loop
        40  PC9   GPIO      -> Eval Blue LED        Eval board: 1s user button pressed
 
-       42  PA9   USART TX  -> Debug / Bootloader
-       43  PA10  USART RX  <- Debug / Bootloader
-
+       42  PA9   USART TX  -> TTL-232R-3V3 RXD Yellow
+       43  PA10  USART RX  <- TTL-232R-3V3 TXD Orange
+                              TTL-232R-3V3 GND Black
        46  PA13  SWD       <- Debug
        49  PA14  SWC       -> Debug
 
        51  PC10  GPIO      -> Debug Yellow LED2
        52  PC11  GPIO      -> Debug Red    LED1
        53  PC12  GPIO      -> Debug Green  LED0
+
+       60  BOOT0           <- 3.3V when booting from boot memory
+
+UART for debugging and hard reset
