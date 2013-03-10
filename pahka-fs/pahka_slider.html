@@ -25,31 +25,45 @@
   <body bgcolor="#ffffec" text="black">
     <h1>Pahka demo</h1>
     <div id="slider">
-      0
-      <input id="red" 
-             type="range" 
-             min="0" 
-             max="100" 
-             step="1" 
-             real_value="100" 
+      80
+      <input id="red"
+             type="range"
+             min="80"
+             max="100"
+             step="1"
+             real_value="100"
              value="100"
              onchange="updateSlider(this)" />
-      100  1/frequency (100 = 10 kHz, 10 = 100 kHz): 
+      100  RED off-duty cycles:
       <span id="red_value">100</span>
     </div>
     <br/>
     <div id="slider">
-      0
-      <input id="gre" 
-             type="range" 
-             min="0" 
-             max="100" 
+      80
+      <input id="gre"
+             type="range"
+             min="80"
+             max="100"
              step="1"
-             real_value="1" 
+             real_value="100"
              value="100"
              onchange="updateSlider(this)" />
-      100  Off-duty cycles: 
+      100  GREEN off-duty cycles:
       <span id="gre_value">100</span>
+    </div>
+    <br/>
+    <div id="slider">
+      80
+      <input id="blu"
+             type="range"
+             min="80"
+             max="100"
+             step="1"
+             real_value="100"
+             value="100"
+             onchange="updateSlider(this)" />
+      100  BLUE off-duty cycles:
+      <span id="blu_value">100</span>
     </div>
     <br/>
   </body>

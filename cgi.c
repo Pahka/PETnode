@@ -14,7 +14,7 @@ static struct {
     { .value = 0, },
     { .value = 100, },
     { .value = 100, },
-    { .value = 2, },
+    { .value = 100, },
  };
 
 static unsigned short
@@ -45,15 +45,18 @@ generate_pahka_cgi(void *arg) {
             leds[lednum].value = 100;
     } else if (*cmd == 'd') {
         leds[lednum].value--;
-        if (leds[lednum].value < 1)
-            leds[lednum].value = 1;
+        if (leds[lednum].value < 80)
+            leds[lednum].value = 80;
     }
     switch (lednum) {
     case 1: 
-        TIM2->ARR  = leds[lednum].value; 
+        TIM16->CCR1 = leds[lednum].value;
         break;
     case 2: 
-        TIM2->CCR4 = leds[lednum].value;
+        TIM17->CCR1 = leds[lednum].value;
+        break;
+    case 3:
+        TIM15->CCR1 = leds[lednum].value;
         break;
     }
     return snprintf((char *)uip_appdata, uip_mss(), "%d", leds[lednum].value);

@@ -24,10 +24,17 @@ typedef struct device_register_init_masked_32bit {
     uint32_t value;
 } device_register_init_masked_32bit_t;
 
+typedef struct device_register_init_waited_32bit {
+    uint16_t offset;
+    uint32_t mask;
+    uint32_t value;
+} device_register_init_waited_32bit_t;
+
 typedef enum device_register_init_type {
     DRI_STATIC_16BIT,
     DRI_STATIC_32BIT,
     DRI_MASKED_32BIT,
+    DRI_WAITED_32BIT,
 } device_register_init_type_t;
 
 #define REG_OFFSET(device, reg) \
@@ -40,6 +47,9 @@ typedef enum device_register_init_type {
     { REG_OFFSET((device), reg), (value) }
 
 #define DEVICE_REGISTER_INIT_STRUCT_MASK_VALUE32(device, reg, mask, value) \
+    { REG_OFFSET((device), reg), (mask), (value) }
+
+#define DEVICE_REGISTER_INIT_STRUCT_WAIT_VALUE32(device, reg, mask, value) \
     { REG_OFFSET((device), reg), (mask), (value) }
 
 /*
@@ -83,6 +93,7 @@ typedef struct device_register_init_descriptor {
         const device_register_init_static_16bit_t *dri_static_16bit;
         const device_register_init_static_32bit_t *dri_static_32bit;
         const device_register_init_masked_32bit_t *dri_masked_32bit;
+        const device_register_init_waited_32bit_t *dri_waited_32bit;
     };
 } device_register_init_descriptor_t;
 
@@ -107,6 +118,14 @@ typedef struct device_register_init_descriptor {
         .dri_type     = DRI_STATIC_16BIT,        \
         .dri_count    = COUNT_OF(table),         \
         .dri_static_16bit = table,               \
+    }
+
+#define DRI_DESCRIPTOR_WAITED_32BIT(reg, table)  \
+    {                                            \
+        .dri_device = (uint32_t *)(reg),         \
+        .dri_type     = DRI_WAITED_32BIT,        \
+        .dri_count    = COUNT_OF(table),         \
+        .dri_waited_32bit = table,               \
     }
 
 extern void Peripheral_Init(void);

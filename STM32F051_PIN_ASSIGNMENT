@@ -8,10 +8,13 @@ Blue             GND
 
 Green   2  PC13  WKUP2     <- ECN28J60 WOL
 
+        8  PC0   ADC_IN10  <- "Production" Buck Converter Blue
+
        14  PA0   WKUP1     <- USER                 Eval board user button
 
 Gray   15  PA1   GPIO      <- ENC28J60 INT
-Purple 16  PA2   TIM2 CH3  <- ENC28J60 CLKOUT      Temporary connection for debugging
+Purple 16  PA2   TIM15 CH1 -> "Production" Buck Converter Blue
+
 Blue   17  PA3   GPIO      -> ENC28J60 RESET
 
 Green  18  PF4
@@ -20,9 +23,12 @@ Yellow 19  PF5
 Orange 20  PA4   SPI NSS   -> ENC28J60 CS          Temporary, check
 Red    21  PA5   SPI SCK   -> ENC28J60 SCK
 Brown  22  PA6   SPI MISO  <- ENC28J60 SO
-Black  24  PA7   SPI MOSI  -> ENC  28J60 SI
+Black  24  PA7   SPI MOSI  -> ENC28J60 SI
 
-       30  PB11  TIM2_CH4  -> "Production" Buck Converter
+           PB0   ADC8      <- "Production" Buck Converter Red
+       27  PB1   ADC9      <- "Production" Buck Converter Green
+           PB8   TIM16_CH1 -> "Production" Buck Converter Red
+           PB9   TIM17_CH1 -> "Production" Buck Converter Green
 
        37  PC6   GPIO      -> Debug Red    LED6    TBD
        38  PC7   GPIO      -> Debug Yellow LED5    TBD

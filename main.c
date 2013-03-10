@@ -108,7 +108,7 @@ void Delay(__IO uint32_t nTime)
             prevDelay = TimingDelay;
         }
         /* XXX Sleep on semaphore. Simplest possible implementation. */
-        // __WFI();
+        __WFI();
     }
     TimingDelay = 0;
 }
@@ -123,10 +123,25 @@ void TimingDelay_Decrement(void)
 }
 
 #ifndef CONTIKI
-void SysTick_Handler(void)
-{
+void SysTick_Handler(void) __attribute__((interrupt(irq)));
+void SysTick_Handler(void) {
     TimingDelay_Decrement();
     // Could be more here
+}
+#endif
+
+#if 0
+void TIM3_IRQHandler(void) __attribute__((interrupt(irq)));
+void TIM3_IRQHandler(void) {
+    static int counter = 0;
+
+    if (counter++ == 50000)
+        DEBUG_SET_LED4(1);
+    else if (counter++ >= 100000) {
+        DEBUG_SET_LED4(0);
+        counter = 0;
+    }
+    TIM3->SR &= ~TIM_SR_UIF;
 }
 #endif
 

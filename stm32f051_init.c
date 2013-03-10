@@ -17,19 +17,22 @@
 #define D16(d, r, v)    DEVICE_REGISTER_INIT_STRUCT_VALUE16((d), r, (v))
 #define D32(d, r, v)    DEVICE_REGISTER_INIT_STRUCT_VALUE32((d), r, (v))
 #define M32(d, r, m, v) DEVICE_REGISTER_INIT_STRUCT_MASK_VALUE32((d), r, (m), (v))
+#define W32(d, r, m, v) DEVICE_REGISTER_INIT_STRUCT_WAIT_VALUE32((d), r, (m), (v))
 
 
 /* XXX: Do we really need mask here?   */
 const struct device_register_init_masked_32bit reset_and_clock_control[] = {
     M32(RCC, APB1ENR,
-        RCC_APB1ENR_TIM2EN,
-        RCC_APB1ENR_TIM2EN),
+        RCC_APB1ENR_TIM2EN   | RCC_APB1ENR_TIM3EN,
+        RCC_APB1ENR_TIM2EN   | RCC_APB1ENR_TIM3EN),
     M32(RCC, APB2ENR,
-        RCC_APB2ENR_TIM1EN   | RCC_APB2ENR_SYSCFGEN | RCC_APB2ENR_SPI1EN,
-        RCC_APB2ENR_TIM1EN   | RCC_APB2ENR_SYSCFGEN | RCC_APB2ENR_SPI1EN),
+        RCC_APB2ENR_TIM1EN   | RCC_APB2ENR_SYSCFGEN | RCC_APB2ENR_SPI1EN | RCC_APB2ENR_ADC1EN |
+        RCC_APB2ENR_TIM15EN  | RCC_APB2ENR_TIM16EN  | RCC_APB2ENR_TIM17EN,
+        RCC_APB2ENR_TIM1EN   | RCC_APB2ENR_SYSCFGEN | RCC_APB2ENR_SPI1EN | RCC_APB2ENR_ADC1EN |
+        RCC_APB2ENR_TIM15EN  | RCC_APB2ENR_TIM16EN  | RCC_APB2ENR_TIM17EN),
     M32(RCC, AHBENR,
-        RCC_AHBENR_GPIOAEN   | RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOFEN,
-        RCC_AHBENR_GPIOAEN   | RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOFEN),
+        RCC_AHBENR_GPIOAEN   | RCC_AHBENR_GPIOBEN   | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOFEN,
+        RCC_AHBENR_GPIOAEN   | RCC_AHBENR_GPIOBEN   | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOFEN),
 };
 
 /*
@@ -50,6 +53,7 @@ const struct device_register_init_masked_32bit reset_and_clock_control[] = {
        )
 
 const struct device_register_init_masked_32bit nvic[] = {
+    ENABLE_INTERRUPT(TIM3_IRQn, 3),
     ENABLE_INTERRUPT(SPI1_IRQn, 3), /* Lowest priority */
 };
 
@@ -59,11 +63,7 @@ const struct device_register_init_static_32bit general_purpose_io_a[] = {
         0
         | ! GPIO_MODER_MODER0    /* 00: PA0  Input  USER */
         | ! GPIO_MODER_MODER1    /* 00: PA1  Input  INT */
-#if 1
-        | ! GPIO_MODER_MODER2    /* 00: PA2  Input  CLKOUT */
-#else
-        |   GPIO_MODER_MODER2_1  /* 10: PA2  AF     TIM XXX */
-#endif
+        |   GPIO_MODER_MODER2_1  /* 10: PA2  AF     TIM15 CH1 */
         |   GPIO_MODER_MODER3_0  /* 01: PA3  Output RESET */
         |   GPIO_MODER_MODER4_1  /* 10: PA4  AF     SPI NSS */
         |   GPIO_MODER_MODER5_1  /* 10: PA5  AF     SPI CLK */
@@ -76,6 +76,7 @@ const struct device_register_init_static_32bit general_purpose_io_a[] = {
         ),
     D32(GPIOA, OTYPER,
         0
+        | ! GPIO_OTYPER_OT_2     /* PA2 AF output   Push-pull */
         | ! GPIO_OTYPER_OT_3     /* PA3 GPIO output Push-pull */
         | ! GPIO_OTYPER_OT_4     /* PA4 SPI NSS     Push-pull */
         | ! GPIO_OTYPER_OT_5     /* PA5 SPI CLK     Push-pull */
@@ -85,6 +86,7 @@ const struct device_register_init_static_32bit general_purpose_io_a[] = {
     /* See page 74 of DM39193 Doc ID 022265 Rev 3 STD32F051x data sheet */
     D32(GPIOA, OSPEEDR,
         0
+        |   GPIO_OSPEEDER_OSPEEDR2
         |   GPIO_OSPEEDER_OSPEEDR3 
         |   GPIO_OSPEEDER_OSPEEDR4
         |   GPIO_OSPEEDER_OSPEEDR5
@@ -97,9 +99,9 @@ const struct device_register_init_static_32bit general_purpose_io_a[] = {
         0
         |   GPIO_PUPDR_PUPDR0_1  /* PA0  <- USER    pull down */
         |   GPIO_PUPDR_PUPDR1_0  /* PA1  <- INT     pull up */
-        |   GPIO_PUPDR_PUPDR2_1  /* PA2  <- CLKOUT  pull down */
-        | ! GPIO_PUPDR_PUPDR3_0  /* PA3  -> RESET   no pull resistors */
-        | ! GPIO_PUPDR_PUPDR3    /* PA4  -> CS      no pull resistors */
+        | ! GPIO_PUPDR_PUPDR2    /* PA2  -> Blue    no pull resistors */
+        | ! GPIO_PUPDR_PUPDR3    /* PA3  -> RESET   no pull resistors */
+        | ! GPIO_PUPDR_PUPDR4    /* PA4  -> CS      no pull resistors */
         | ! GPIO_PUPDR_PUPDR5    /* PA5  -> SCK     no pull resistors */
         |   GPIO_PUPDR_PUPDR6_1  /* PA6  <- MISO    pull down */
         | ! GPIO_PUPDR_PUPDR7    /* PA7  -> MOSI    no pull resistors */
@@ -110,6 +112,7 @@ const struct device_register_init_static_32bit general_purpose_io_a[] = {
         ),
     D32(GPIOA, AFR[0],
         0
+        | ! GPIO_AFRL_AFRL2      /* PA2  AF0 TIM15_CH1 */
         | ! GPIO_AFRL_AFRL4      /* PA4  AF0 SPI */
         | ! GPIO_AFRL_AFRL5      /* PA5  AF0 SPI */
         | ! GPIO_AFRL_AFRL6      /* PA6  AF0 SPI */
@@ -130,14 +133,18 @@ const struct device_register_init_static_32bit general_purpose_io_a[] = {
 const struct device_register_init_static_32bit general_purpose_io_b[] = {
     D32(GPIOB, MODER,
         0
-        |   GPIO_MODER_MODER11_1  /* 01: PB11  AF */
-        |   GPIO_MODER_MODER13_1  /* 01: PB13  AF */
-        |   GPIO_MODER_MODER14_1  /* 01: PB14  AF */
-        |   GPIO_MODER_MODER15_1  /* 01: PB15  AF */
+        |   GPIO_MODER_MODER1_1 | GPIO_MODER_MODER1_0
+                                  /* 11: PB1   Analog */
+        |   GPIO_MODER_MODER8_1   /* 10: PB8   AF */
+        |   GPIO_MODER_MODER9_1   /* 10: PB9   AF */
+        |   GPIO_MODER_MODER13_1  /* 10: PB13  AF */
+        |   GPIO_MODER_MODER14_1  /* 10: PB14  AF */
+        |   GPIO_MODER_MODER15_1  /* 10: PB15  AF */
         ),
     D32(GPIOB, OTYPER,
         0
-        | ! GPIO_OTYPER_OT_11     /* PB11 GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_8      /* PB8  GPIO output Push-pull */
+        | ! GPIO_OTYPER_OT_9      /* PB9  GPIO output Push-pull */
         | ! GPIO_OTYPER_OT_13     /* PB13 GPIO output Push-pull */
         | ! GPIO_OTYPER_OT_14     /* PB14 GPIO output Push-pull */
         | ! GPIO_OTYPER_OT_15     /* PB15 GPIO output Push-pull */
@@ -145,35 +152,45 @@ const struct device_register_init_static_32bit general_purpose_io_b[] = {
     /* See page 74 of DM39193 Doc ID 022265 Rev 3 STD32F051x data sheet */
     D32(GPIOB, OSPEEDR,
         0
-        | ! GPIO_OSPEEDER_OSPEEDR11
+        | ! GPIO_OSPEEDER_OSPEEDR8
+        | ! GPIO_OSPEEDER_OSPEEDR9
         | ! GPIO_OSPEEDER_OSPEEDR13
         | ! GPIO_OSPEEDER_OSPEEDR14
         | ! GPIO_OSPEEDER_OSPEEDR15
         ),
     D32(GPIOB, PUPDR,
         0
-        | ! GPIO_PUPDR_PUPDR11  /* PB11 no pull resistors */
+        | ! GPIO_PUPDR_PUPDR1   /* PB1  no pull resistors */
+        | ! GPIO_PUPDR_PUPDR8   /* PB8  no pull resistors */
+        | ! GPIO_PUPDR_PUPDR9   /* PB9  no pull resistors */
         | ! GPIO_PUPDR_PUPDR13  /* PB13 no pull resistors */
         | ! GPIO_PUPDR_PUPDR14  /* PB14 no pull resistors */
         | ! GPIO_PUPDR_PUPDR15  /* PB15 no pull resistors */
         ),
-    D32(GPIOB, AFR[1],
-        0
+#define GPIO_AFRL_AFRL0_AF2            ((uint32_t)0x00000002)
+#define GPIO_AFRL_AFRL1_AF2            ((uint32_t)0x00000020)
+#define GPIO_AFRL_AFRL2_AF2            ((uint32_t)0x00000200)
 #define GPIO_AFRL_AFRL3_AF2            ((uint32_t)0x00002000)
+#define GPIO_AFRL_AFRL4_AF2            ((uint32_t)0x00020000)
 #define GPIO_AFRL_AFRL5_AF2            ((uint32_t)0x00200000)
 #define GPIO_AFRL_AFRL6_AF2            ((uint32_t)0x02000000)
 #define GPIO_AFRL_AFRL7_AF2            ((uint32_t)0x20000000)
-        |   GPIO_AFRL_AFRL3_AF2 /* PB11 AF2 TIM2_CH4  */
+    D32(GPIOB, AFR[1],
+        0
+        |   GPIO_AFRL_AFRL0_AF2 /* PB8  AF2 TIM16_CH1  */
+        |   GPIO_AFRL_AFRL1_AF2 /* PB9  AF2 TIM17_CH1  */
         |   GPIO_AFRL_AFRL5_AF2 /* PB13 AF2 TIM1_CH1N */
         |   GPIO_AFRL_AFRL6_AF2 /* PB14 AF2 TIM1_CH2N */
         |   GPIO_AFRL_AFRL7_AF2 /* PB15 AF2 TIM1_CH3N */
         ),
 };
 
-/* Port C -- Eval and debug functions */
+/* Port C -- Eval and debug functions, TIM15 */
 const struct device_register_init_static_32bit general_purpose_io_eval[] = {
     D32(GPIOC, MODER,
         0
+        |   GPIO_MODER_MODER0_1 | GPIO_MODER_MODER0_0
+                                 /* 10: PC0  Analog */
         |   GPIO_MODER_MODER6_0  /* 01: PC6  Output Led4 */
         |   GPIO_MODER_MODER7_0  /* 01: PC7  Output Led4 */
         |   GPIO_MODER_MODER8_0  /* 01: PC8  Output Led4 */
@@ -221,40 +238,82 @@ const struct device_register_init_static_32bit general_purpose_io_eval[] = {
  * Timer-counter for LED buck converter.
  */
 const struct device_register_init_static_16bit rgb_buck_pwm[] = {
-    D16(TIM2, CR1, 0),        /* Disable the counter */
-    D16(TIM2, CR2,
+    D16(TIM15, CR1, 0),         /* Disable the counter */
+    // D16(TIM15, CR2, 0),      /* Default value */
+    // D16(TIM16, SMCR, 0),     /* Default value */
+    // D16(TIM15, DIER, 0),     /* Default value */
+    D16(TIM15, CCMR1,
+        0
+        |   TIM_CCMR1_OC1M_PWM2 /* 111 = CH1 PWM Mode 2 */
+        |   TIM_CCMR1_OC1PE     /* 1   = CH1 preload register in use */
+        |   TIM_CCMR1_OC1FE     /* 1   = CH1 compare fast mode enabled */
+        | ! TIM_CCMR1_CC1S      /* 00  = CH1 is output */
+        ),
+    // D16(TIM15, CCMR2, 0),    /* Default value */
+    D16(TIM15, CCER,
+        0
+        | ! TIM_CCER_CC1NP      /* 0   = OC1N active high */
+        | ! TIM_CCER_CC1NE      /* 0   = OC1N is not output */
+        | ! TIM_CCER_CC1P       /* 0   = OC1  active high */
+        |   TIM_CCER_CC1E       /* 1   = OC1  is actively output */
+        ),
+    D16(TIM15, BDTR,
+        0
+        |   TIM_BDTR_MOE        /* 1   = Main output enable */
+        |   TIM_BDTR_AOE        /* 1   = Automatic output enable */
+        | ! TIM_BDTR_BKP        /* 0   = BRK is active low, default value */
+        | ! TIM_BDTR_BKE        /* 0   = Break inputs disabled */
+        |   TIM_BDTR_OSSR       /* 1   = OC/OCN outputs are enabled */
+        |   TIM_BDTR_OSSI       /* 1   = OC/OCN outputs are forced to idle level when inactive */
+        | ! TIM_BDTR_LOCK       /* 00  = No bits are write proteced */
+        | ! TIM_BDTR_DTG        /* 0   = No dead time */
+        ),
+
+    D16(TIM15, PSC,    47),     /* 48MHz / (47+1)  = 1 MHz */
+    D16(TIM15, ARR,    99),     /* 1 MHz / 100 = 10 kHz */
+    D16(TIM15, CCR1,  100),     /* Boot with 0% duty */
+
+    D16(TIM15, CR1,
+        0
+        | ! TIM_CR1_CKD         /* 00 = Clock divide by 1 */
+        |   TIM_CR1_ARPE        /* 1  = Auto-reload preload enabled, ARR buffered */
+        | ! TIM_CR1_OPM         /* 0  = Continuous */
+        | ! TIM_CR1_URS         /* 0  = All UEV sources generate interrupt, if enabled */
+        | ! TIM_CR1_UDIS        /* 0  = Update events are generated, shadow registers updated */
+        |   TIM_CR1_CEN         /* 1  = Enable the counter */
+        ),
+};
+
+#if 0
+XXX Doesnt work currently, must fix SPI interrupt tolerance first
+/*
+ * Timer-counter for interrupt timer
+ */
+const struct device_register_init_static_16bit interrupt_timer[] = {
+    D16(TIM3, CR1, 0),        /* Disable the counter */
+    D16(TIM3, CR2,
         0
         | ! TIM_CR2_TI1S      /* 0 = CH1 is connected to TI1 */
         | ! TIM_CR2_MMS       /* 000 = "Reset." TRGO from UG */
         | ! TIM_CR2_CCDS      /* 0 = DMA when CCX event */
         ),
-    D16(TIM2, SMCR, 0),
-    D16(TIM2, DIER, 0),
-    D16(TIM2, CCMR1, 0),
-    D16(TIM2, CCMR2,
+    D16(TIM3, SMCR, 0),
+    D16(TIM3, DIER,
         0
-        | ! TIM_CCMR2_OC4CE     /* 0   = OC41Ref not affecved by ETRF */
-        |   TIM_CCMR2_OC4M_PWM1 /* 110 = CH4 PWM Mode 1 */
-        |   TIM_CCMR2_OC4PE     /* 1   = CH4 preload register in use */
-        |   TIM_CCMR2_OC4FE     /* 1   = CH4 compare fast mode enabled */
-        | ! TIM_CCMR2_CC4S      /* 00  = CH4 is output */
+        |   TIM_DIER_UIE       /* 1 = Update interrupt enabled */
         ),
-    D16(TIM2, CCER,
-        0
-        | ! TIM_CCER_CC4NP      /* 0   = Must be kept cleared for output */
-        |   TIM_CCER_CC4P       /* 1   = CH4 active low */
-        |   TIM_CCER_CC4E       /* 1   = CH4 is actively output */
-        ),
+    D16(TIM3, CCMR1, 0),
+    D16(TIM3, CCMR2, 0),
+    D16(TIM3, CCER, 0),
 
     /*
-     * Note that TIM2 ARR and CCR registers are 32-bits long, but here we
+     * Note that TIM3 ARR and CCR registers are 32-bits long, but here we
      * initialize them with only 16-bits long values
      */
-    D16(TIM2, CCR4,  100),    /* Boot with 0% duty */
-    D16(TIM2, ARR,   100),    /* 1 MHz / 100 = 10 kHz */
-    D16(TIM2, PSC,    47),    /* 48MHz / 48  = 1 MHz */
+    D16(TIM3, ARR,   1000),   /* 1 MHz / 20 = 50 kHz  XXX */
+    D16(TIM3, PSC,    47),    /* 48MHz / 48  = 1 MHz */
 
-    D16(TIM2, CR1,
+    D16(TIM3, CR1,
         0
         | ! TIM_CR1_CKD       /* 00 = Clock divide by 1 */
         |   TIM_CR1_ARPE      /* 1  = Auto-reload preload enabled, ARR buffered */
@@ -266,6 +325,7 @@ const struct device_register_init_static_16bit rgb_buck_pwm[] = {
         |   TIM_CR1_CEN       /* Enable the counter */
         ),
 };
+#endif
 
 /* SPI */
 const struct device_register_init_static_16bit spi[] = {
@@ -305,17 +365,114 @@ const struct device_register_init_static_16bit spi[] = {
         ),
 };
 
+/* ADC */
+const struct device_register_init_static_32bit adc_start_calibrate[] = {
+    D32(ADC1, CR,
+        0
+        |   ADC_CR_ADCAL       /* 1: Start calibration now */
+        | ! ADC_CR_ADSTP       /* 0: Do not attempt to stop ADC conversion  */
+        | ! ADC_CR_ADSTART     /* 0: Do not attempt to start ADC conversion  */
+        | ! ADC_CR_ADDIS       /* 0: Do not attempt to disable ADC */
+        | ! ADC_CR_ADEN        /* 0: Do not attempt to enable ADC */
+        ),
+};
+
+/* Wait for the ADC calibrate to finish */
+const struct device_register_init_waited_32bit adc_wait_for_calibrate[] = {
+    W32(ADC1, CR, ADC_CR_ADCAL, 0),
+};
+
+const struct device_register_init_static_32bit adc_init[] = {
+    D32(ADC1, IER,
+        0
+        | ! ADC_IER_AWDIE      /* 0: No analog watchdog interrupts XXX */
+        | ! ADC_IER_OVRIE      /* 0: No overrun interrupts */
+        | ! ADC_IER_EOSEQIE    /* 0: No end of sequence interrupst XXX */
+        | ! ADC_IER_EOCIE      /* 0: No end of conversion interrupts */
+        | ! ADC_IER_EOSMPIE    /* 0: No end of sampling flag interrupts */
+        | ! ADC_IER_ADRDYIE    /* 0: No ADC ready interrupts */
+        ),
+    D32(ADC1, CR,
+        0
+        | ! ADC_CR_ADCAL       /* 0: Do not attempt to calibrate */
+        | ! ADC_CR_ADSTP       /* 0: Do not attempt to stop ADC conversion  */
+        | ! ADC_CR_ADSTART     /* 0: Do not attempt to start ADC conversion  */
+        | ! ADC_CR_ADDIS       /* 0: Do not attempt to disable ADC */
+        |   ADC_CR_ADEN        /* 0: Enable ADC */
+        ),
+    D32(ADC1, CFGR1,
+        0
+        | ! ADC_CFGR1_AWDCH    /* 00000: Default value */
+        | ! ADC_CFGR1_AWDEN    /* 0: Analog watchdog disable */
+        | ! ADC_CFGR1_AWDSGL   /* 0: Analog watchdog on all channels */
+        | ! ADC_CFGR1_DISCEN   /* 0: Discontinuous mode disabled */
+        | ! ADC_CFGR1_AUTOFF   /* 0: Auto-off mode disabled */
+        | ! ADC_CFGR1_WAIT     /* 0: Wait conversion mode off */
+        |   ADC_CFGR1_CONT     /* 1: Continuous conversion mode */
+        |   ADC_CFGR1_OVRMOD   /* 1: ADC_DR is overwritten with latest value */
+        | ! ADC_CFGR1_EXTEN    /* 00: Conversion started by software */
+        | ! ADC_CFGR1_EXTSEL   /* 000: Default value */
+        | ! ADC_CFGR1_ALIGN    /* 0: Right alignment */
+        | ! ADC_CFGR1_RES      /* 00: 12-bits resolution */
+        | ! ADC_CFGR1_SCANDIR  /* 0: Upward scan */
+        | ! ADC_CFGR1_DMACFG   /* 0: N/A, DMA not used */
+        | ! ADC_CFGR1_DMAEN    /* 0: DMA disabled */
+        ),
+    D32(ADC1, CFGR2,
+        0
+        |   ADC_CFGR2_JITOFFDIV4 /* 1: Remove jitter when ADC is driven by PCLK/4 */
+        | ! ADC_CFGR2_JITOFFDIV2 /* 0: No jitter removal on PCLK/2 */
+        ),
+    D32(ADC1, SMPR, 0),          /* 1.5 ADC clock cycles sampling time */
+    D32(ADC1, CHSELR,
+        0
+        | ! ADC_CHSELR_CHSEL17 /* 0: Channel 17 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL16 /* 0: Channel 16 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL15 /* 0: Channel 15 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL14 /* 0: Channel 14 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL13 /* 0: Channel 13 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL12 /* 0: Channel 12 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL11 /* 0: Channel 11 not selected for conversion */
+        |   ADC_CHSELR_CHSEL10 /* 1: Channel 10 selected for conversion Blue  */
+        |   ADC_CHSELR_CHSEL9  /* 1: Channel  9 selected for conversion Green */
+        |   ADC_CHSELR_CHSEL8  /* 1: Channel  8 selected for conversion Red   */
+        | ! ADC_CHSELR_CHSEL7  /* 0: Channel  7 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL6  /* 0: Channel  6 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL5  /* 0: Channel  5 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL4  /* 0: Channel  4 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL3  /* 0: Channel  3 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL2  /* 0: Channel  2 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL1  /* 0: Channel  1 not selected for conversion */
+        | ! ADC_CHSELR_CHSEL0  /* 0: Channel  0 not selected for conversion */
+        ),
+};
+
+const struct device_register_init_static_32bit adc_init2[] = {
+    D32(ADC, CCR,
+        0
+        | ! ADC_CCR_VBATEN     /* 0: VBAT channel disabled */
+        | ! ADC_CCR_TSEN       /* 0: Temperature sensor disabled */
+        | ! ADC_CCR_VREFEN     /* 0: VREFINT channel disable */
+        ),
+};
+
 /*
  * Master initialisation table
  */
 const device_register_init_descriptor_t dri_tables[] = {
-    DRI_DESCRIPTOR_MASKED_32BIT(RCC, reset_and_clock_control),
-    DRI_DESCRIPTOR_MASKED_32BIT(NVIC, nvic),
-    DRI_DESCRIPTOR_STATIC_16BIT(SPI1, spi),
-    DRI_DESCRIPTOR_STATIC_16BIT(TIM2, rgb_buck_pwm),
+    DRI_DESCRIPTOR_MASKED_32BIT(RCC,   reset_and_clock_control),
+    DRI_DESCRIPTOR_MASKED_32BIT(NVIC,  nvic),
+    DRI_DESCRIPTOR_STATIC_32BIT(ADC1,  adc_start_calibrate),
+    DRI_DESCRIPTOR_STATIC_16BIT(SPI1,  spi),
+#if 0
+    DRI_DESCRIPTOR_STATIC_16BIT(TIM3,  interrupt_timer),
+#endif
     DRI_DESCRIPTOR_STATIC_32BIT(GPIOA, general_purpose_io_a),
     DRI_DESCRIPTOR_STATIC_32BIT(GPIOB, general_purpose_io_b),
     DRI_DESCRIPTOR_STATIC_32BIT(GPIOC, general_purpose_io_eval),
+    DRI_DESCRIPTOR_WAITED_32BIT(ADC1,  adc_wait_for_calibrate),
+    DRI_DESCRIPTOR_STATIC_32BIT(ADC1,  adc_init),
+    DRI_DESCRIPTOR_STATIC_32BIT(ADC,   adc_init2),
 };
 
 /*
@@ -380,12 +537,12 @@ Config_Masked32(void *device, const device_register_init_masked_32bit_t *values,
     const device_register_init_masked_32bit_t *p;
 
     for (p = values; p < values + count; p++) {
-        register uint32_t *reg;              /* Pointer to the device register */
-        register uint32_t tmp;
-
-        reg = (uint32_t *)(((char *)device) + p->offset);
+        register uint32_t *const reg               /* Pointer to the device register */
+            = (uint32_t *)(((char *)device) + p->offset);
 
         // XXX: assert that no bits in p->value are outside of p->mask
+
+        register uint32_t tmp;
 
         tmp  = *reg;
         tmp &= ~p->mask;
@@ -394,11 +551,35 @@ Config_Masked32(void *device, const device_register_init_masked_32bit_t *values,
     }
 }
 
+/*
+ * Wait for the given words to have the given masked values
+ */
+static inline void
+Config_Waited32(void *device, const device_register_init_masked_32bit_t *values, const int count) {
+    const device_register_init_masked_32bit_t *p;
+
+    for (p = values; p < values + count; p++) {
+        register const uint32_t value = p->value;  /* Waited for value */
+        register uint32_t * const reg              /* Pointer to the device register */
+            = (uint32_t *)(((char *)device) + p->offset);
+
+        register uint32_t tmp;
+
+        do {
+            tmp  = *reg;
+            tmp &= ~p->mask;
+        } while (value != tmp);
+    }
+}
+
 void
 Peripheral_Init(void) {
     for (unsigned int i = 0; i < COUNT_OF(dri_tables); i++) {
         const device_register_init_descriptor_t *dri = &dri_tables[i];
         switch (dri->dri_type) {
+        case DRI_WAITED_32BIT:
+            Config_Waited32(dri->dri_device, dri->dri_masked_32bit, dri->dri_count);
+            break;
         case DRI_MASKED_32BIT:
             Config_Masked32(dri->dri_device, dri->dri_masked_32bit, dri->dri_count);
             break;
@@ -413,5 +594,17 @@ Peripheral_Init(void) {
             break;
         }
     }
+
+    Config_Static16(TIM15, rgb_buck_pwm, COUNT_OF(rgb_buck_pwm));
+    /* Start next timers suitably delayed */
+    while (TIM15->ARR < 30)
+        ;
+
+    Config_Static16(TIM16, rgb_buck_pwm, COUNT_OF(rgb_buck_pwm));
+    /* Start next timers suitably delayed */
+    while (TIM16->ARR < 30)
+        ;
+
+    Config_Static16(TIM17, rgb_buck_pwm, COUNT_OF(rgb_buck_pwm));
 }
 
