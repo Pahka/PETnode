@@ -28,45 +28,45 @@
 %! pahka unique id
     </p>
     <div id="slider">
-      80
+      100%
       <input id="red"
              type="range"
-             min="80"
-             max="100"
+             min="420"
+             max="481"
              step="1"
-             real_value="100"
-             value="100"
+             real_value="481"
+             value="481"
              onchange="updateSlider(this)" />
-      100  RED off-duty cycles:
-      <span id="red_value">100</span>
+      0%  (RED off-duty cycles:
+      <span id="red_value">481 </span>)
     </div>
     <br/>
     <div id="slider">
-      80
+      100%
       <input id="gre"
              type="range"
-             min="80"
-             max="100"
+             min="420"
+             max="481"
              step="1"
-             real_value="100"
-             value="100"
+             real_value="481"
+             value="481"
              onchange="updateSlider(this)" />
-      100  GREEN off-duty cycles:
-      <span id="gre_value">100</span>
+      0%  (GREEN off-duty cycles:
+      <span id="gre_value">481 </span>)
     </div>
     <br/>
     <div id="slider">
-      80
+      100%
       <input id="blu"
              type="range"
-             min="80"
-             max="100"
+             min="420"
+             max="481"
              step="1"
-             real_value="100"
-             value="100"
+             real_value="481"
+             value="481"
              onchange="updateSlider(this)" />
-      100  BLUE off-duty cycles:
-      <span id="blu_value">100</span>
+      0%  (BLUE off-duty cycles:
+      <span id="blu_value">481 </span>)
     </div>
     <br/>
   </body>

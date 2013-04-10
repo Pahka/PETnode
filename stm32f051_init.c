@@ -269,9 +269,9 @@ const struct device_register_init_static_16bit rgb_buck_pwm[] = {
         | ! TIM_BDTR_DTG        /* 0   = No dead time */
         ),
 
-    D16(TIM15, PSC,    47),     /* 48MHz / (47+1)  = 1 MHz */
-    D16(TIM15, ARR,    99),     /* 1 MHz / 100 = 10 kHz */
-    D16(TIM15, CCR1,  100),     /* Boot with 0% duty */
+    D16(TIM15, PSC,     4),     /* 48MHz / (4+1) = approx 10 MHz (9.60 MHz) */
+    D16(TIM15, ARR,   480),     /* 9.6 MHz / 480 = 20 kHz */
+    D16(TIM15, CCR1,  481),     /* Boot with 0% duty */
 
     D16(TIM15, CR1,
         0
@@ -597,12 +597,12 @@ Peripheral_Init(void) {
 
     Config_Static16(TIM15, rgb_buck_pwm, COUNT_OF(rgb_buck_pwm));
     /* Start next timers suitably delayed */
-    while (TIM15->ARR < 30)
+    while (TIM15->ARR < 120)
         ;
 
     Config_Static16(TIM16, rgb_buck_pwm, COUNT_OF(rgb_buck_pwm));
     /* Start next timers suitably delayed */
-    while (TIM16->ARR < 30)
+    while (TIM16->ARR < 120)
         ;
 
     Config_Static16(TIM17, rgb_buck_pwm, COUNT_OF(rgb_buck_pwm));

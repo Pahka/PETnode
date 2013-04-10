@@ -12,9 +12,9 @@ static struct {
     int value;
 } leds[] = { 
     { .value = 0, },
-    { .value = 100, },
-    { .value = 100, },
-    { .value = 100, },
+    { .value = 481, },
+    { .value = 481, },
+    { .value = 481, },
  };
 
 static unsigned short
@@ -50,12 +50,12 @@ generate_pahka_cgi(void *arg) {
 
     if (*cmd == 'i') {
         leds[lednum].value++;
-        if (leds[lednum].value > 100)
-            leds[lednum].value = 100;
+        if (leds[lednum].value > 481)
+            leds[lednum].value = 481;
     } else if (*cmd == 'd') {
         leds[lednum].value--;
-        if (leds[lednum].value < 80)
-            leds[lednum].value = 80;
+        if (leds[lednum].value < 320)
+            leds[lednum].value = 320;
     }
     switch (lednum) {
     case 1: 
