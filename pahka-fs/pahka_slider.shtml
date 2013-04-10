@@ -18,12 +18,15 @@
       }
     </script>
     <title>Pahka demo 0.02!</title>
-    <link rel="stylesheet" type="text/css" href="/style.css">  
+    <link rel="stylesheet" type="text/css" href="/style.css">
     <style type="text/css">
     </style>
   </head>
   <body bgcolor="#ffffec" text="black">
     <h1>Pahka demo</h1>
+    <p>Unique Device ID:
+%! pahka unique id
+    </p>
     <div id="slider">
       80
       <input id="red"

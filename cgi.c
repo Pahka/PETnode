@@ -31,6 +31,15 @@ generate_pahka_cgi(void *arg) {
         return 0;
     led += 1;
 
+    if (*cmd == 'u') {
+        /* Return the Unique ID */
+        return snprintf((char *)uip_appdata, uip_mss(),
+                        "%8.08x%8.08x%8.08x",
+                        *(unsigned int *)(0x1FFFF7AC + 0x08),
+                        *(unsigned int *)(0x1FFFF7AC + 0x04),
+                        *(unsigned int *)(0x1FFFF7AC + 0x00));
+    }
+
     int lednum = 0;
     if (*led == 'r') 
         lednum = 1;
